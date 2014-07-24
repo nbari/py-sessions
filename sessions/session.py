@@ -2,6 +2,8 @@
 
 wsgi middleware for handling sessions
 """
+
+import pickle
 import time
 import uuid
 
@@ -22,6 +24,8 @@ class Session(object):
         self.handler = backend
         self.lifetime = lifetime
         self.sid = None
+        self.data = {}
+        self.data_hash = None
 
         if 'HTTP_COOKIE' in environ:
             cookie = SimpleCookie(self.environ['HTTP_COOKIE'])
@@ -32,20 +36,49 @@ class Session(object):
                 if cookie_sid[:10] != 0 and time.time() < cookie_sid[:10]:
                     self.sid = cookie_sid[10:]
 
-    def read(self, session_id):
+    def read(self, sid):
         pass
 
-    def write(self, session_id, session_data):
+    def write(self, sid, session_data):
+        pass
+
+    def destroy(self, sid):
         pass
 
     def start(self):
-        pass
+        if self.sid:
+            self.read(self.sid)
+        else:
+            self.sid = self.make_sid()
+
+        """
+        hash for current session data
+        """
+        self.data_hash = hash(frozenset(self.data.items()))
 
     def make_sid(self):
-        expire_dt = datetime.utcnow() + timedelta(seconds=self.lifetime)
-        expire_ts = int(time.mktime((expire_dt).timetuple()))
-        return ('%010d' % expire_ts) + uuid.uuid4().hex
+        """
+        create new sid
+        """
+        expire = datetime.utcnow() + timedelta(seconds=self.lifetime)
+        expire = int(time.mktime((expire).timetuple()))
+        return ('%010d' % expire) + uuid.uuid4().hex
 
+    def regenerate_id(self):
+        pass
+
+    def save(self):
+        # no session is active
+        if not self.sid:
+            return
+
+        # nothing has changed
+        if self.data_hash == hash(frozenset(self.data.items())):
+            return
+
+        session_data = pickle.dumps(self.data, 2)
+
+        self.write(self.sid, session_data)
 
 class SessionMiddleware(object):
 
