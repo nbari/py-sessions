@@ -39,7 +39,7 @@ class SessionMiddleware(object):
                 "Try os.urandom(64) to make a key.")
 
         if not isinstance(backend, backends.SessionHandler):
-            ---
+            pass
 
     def __call__(self, environ, start_response):
         data.session = Session()

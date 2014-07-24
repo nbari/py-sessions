@@ -1,15 +1,21 @@
 """
-backend abstract class
+base backend abstract class
 """
 
+from abc import ABCMeta, abstractmethod
 
-class SessionHandler(object):
 
+class HandlerBase(object):
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
     def set(self, key, value, ttl=0):
-        pass
+        return
 
+    @abstractmethod
     def get(self, key):
-        pass
+        return
 
+    @abstractmethod
     def delete(sekf, key):
-        pass
+        return
