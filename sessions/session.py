@@ -20,9 +20,10 @@ data = local()
 
 class Session(object):
 
-    def __init__(self, environ, backend, lifetime):
+    def __init__(self, environ, backend, ttl, cookie_name):
         self.handler = backend
-        self.lifetime = lifetime
+        self.ttl = ttl
+        self.cookie_name = cookie_name
         self.sid = None
         self.data = {}
         self.data_hash = None
@@ -30,16 +31,16 @@ class Session(object):
         if 'HTTP_COOKIE' in environ:
             cookie = SimpleCookie(self.environ['HTTP_COOKIE'])
 
-            if cookie.get('sid'):
-                cookie_sid = cookie['sid'].value
+            if cookie.get(self.cookie_name):
+                cookie_sid = cookie[self.cookie_name].value
 
-                if cookie_sid[:10] != 0 and time.time() < cookie_sid[:10]:
-                    self.sid = cookie_sid[10:]
+                if cookie_sid:
+                    self.sid = cookie_sid
 
     def read(self, sid):
         pass
 
-    def write(self, sid, session_data):
+    def write(self, sid, session_data, ttl):
         pass
 
     def destroy(self, sid):
@@ -47,9 +48,11 @@ class Session(object):
 
     def start(self):
         if self.sid:
-            self.read(self.sid)
+            # check if cookie hasn't expired
+            if not self.read(self.sid):
+                self.sid = uuid.uuid4().hex
         else:
-            self.sid = self.make_sid()
+            self.sid = uuid.uuid4().hex
 
         """
         hash for current session data
@@ -58,9 +61,8 @@ class Session(object):
 
     def make_sid(self):
         """
-        create new sid
         """
-        expire = datetime.utcnow() + timedelta(seconds=self.lifetime)
+        expire = datetime.utcnow() + timedelta(seconds=self.ttl)
         expire = int(time.mktime((expire).timetuple()))
         return ('%010d' % expire) + uuid.uuid4().hex
 
@@ -78,7 +80,16 @@ class Session(object):
 
         session_data = pickle.dumps(self.data, 2)
 
-        self.write(self.sid, session_data)
+        try:
+            self.write(self.sid, session_data, self.ttl)
+        except Exception as e:
+            return
+
+        cookie = SimpleCookie()
+        cookie[self.cookie_name] = self.sid
+        cookie[self.cookie_name]['path'] = '/'
+        cookie[self.cookie_name]['expires'] = self.ttl
+
 
 class SessionMiddleware(object):
 
@@ -87,14 +98,15 @@ class SessionMiddleware(object):
     :backend: An instance of the HandlerBase, you can use redis, memcache
     gae_datastore, etc, it just needs to extends the HandlerBas
 
-    :lifetime: ``datetime.timedelta`` that specifies how long a session
+    :ttl: ``datetime.timedelta`` that specifies how long a session
     may last. Defaults to 12 hours.
     """
 
-    def __init__(self, app, backend, lifetime=43200):
+    def __init__(self, app, backend, ttl=43200, cookie_name='PHPSESSID'):
         self.app = app
         self.backend = backend
-        self.lifetime = lifetime
+        self.ttl = ttl
+        self.cookie_name = cookie_name
 
         if not isinstance(backend, HandlerBase):
             raise ValueError('backend must be an instance of HandlerBase')
@@ -104,16 +116,17 @@ class SessionMiddleware(object):
         data.session = Session(
             environ=environ,
             backend=self.backend,
-            lifetime=self.lifetime)
+            ttl=self.ttl,
+            cookie_name=self.cookie_name)
 
         """
         PEP-0333 start_response()
         wrapper to insert a cookie into the response headers
         """
         def session_response(status, headers, exc_info=None):
-            data.session.save()
-            for ch in data.session.make_cookie_headers():
-                headers.append(('Set-Cookie', ch))
+            session_cookie = data.session.save()
+            if isinstance(session_cookie, SimpleCookie):
+                headers.append(('Set-Cookie', session_cookie))
             return start_response(status, headers, exc_info)
 
         """
