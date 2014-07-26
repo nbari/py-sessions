@@ -168,7 +168,7 @@ class SessionMiddleware(object):
                 cookie[self.cookie_name] = sid
                 cookie[self.cookie_name]['path'] = '/'
                 cookie[self.cookie_name]['expires'] = self.ttl
-                cookie = cookie.values()[0].OutputString()
+                cookie = cookie[self.cookie_name].OutputString()
                 self.log.debug('Cookie: %s' % cookie)
                 headers.append(('Set-Cookie', cookie))
             return start_response(status, headers, exc_info)
