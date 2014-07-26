@@ -19,6 +19,11 @@ thread-local data
 data = local()
 
 
+def session_start():
+    data.session.start()
+    return data.session
+
+
 class Session(object):
 
     def __init__(self, environ, backend, ttl, cookie_name, log):
@@ -31,22 +36,13 @@ class Session(object):
         self.log = log
 
         if 'HTTP_COOKIE' in environ:
-            cookie = SimpleCookie(self.environ['HTTP_COOKIE'])
+            cookie = SimpleCookie(environ['HTTP_COOKIE'])
 
             if cookie.get(self.cookie_name):
                 cookie_sid = cookie[self.cookie_name].value
 
                 if cookie_sid:
                     self.sid = cookie_sid
-
-    def read(self, sid):
-        pass
-
-    def write(self, sid, session_data, ttl):
-        pass
-
-    def destroy(self, sid):
-        pass
 
     def start(self):
         if self.sid:
@@ -57,13 +53,25 @@ class Session(object):
             self.sid = uuid.uuid4().hex
 
         """
-        hash for current session data
+         hash for current session data
         """
         self.data_hash = hash(frozenset(self.data.items()))
 
+    def read(self, sid):
+        session_data = self.handler.get(sid)
+        if session_data:
+            self.data = pickle.loads(session_data)
+
+        else:
+            self.data = {}
+
+    def write(self, sid, session_data, ttl):
+        pass
+
+    def destroy(self, sid):
+        pass
+
     def make_sid(self):
-        """
-        """
         expire = datetime.utcnow() + timedelta(seconds=self.ttl)
         expire = int(time.mktime((expire).timetuple()))
         return ('%010d' % expire) + uuid.uuid4().hex
@@ -85,7 +93,8 @@ class Session(object):
         try:
             self.write(self.sid, session_data, self.ttl)
         except Exception as e:
-            return False
+            self.log.critical('Could not write session: %s' % e)
+            return
 
         return self.sid
 
@@ -134,6 +143,9 @@ class SessionMiddleware(object):
                 cookie[self.cookie_name] = sid
                 cookie[self.cookie_name]['path'] = '/'
                 cookie[self.cookie_name]['expires'] = self.ttl
+
+                self.log.debug('Cookie: %s' % cookie.values[0].OutputString())
+
                 headers.append(('Set-Cookie', morsel.OutputString())
                                for morsel in cookie.values())
             return start_response(status, headers, exc_info)

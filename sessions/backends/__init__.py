@@ -9,13 +9,13 @@ class HandlerBase(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def set(self, key, value, ttl=0):
+    def set(self, sid, data, ttl=0):
         return
 
     @abstractmethod
-    def get(self, key):
+    def get(self, sid):
         return
 
     @abstractmethod
-    def delete(sekf, key):
+    def delete(self, sid):
         return
