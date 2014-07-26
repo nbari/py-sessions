@@ -4,7 +4,7 @@ from . import HandlerBase
 
 class Handler(HandlerBase):
 
-    def __init__(self, host='127.0.0.1', port=6368, db=0):
+    def __init__(self, host='127.0.0.1', port=6379, db=0):
         self.db = redis.StrictRedis(host, port, db)
 
     def set(self, sid, data, ttl=0):

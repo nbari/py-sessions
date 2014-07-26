@@ -65,8 +65,8 @@ class Session(object):
         else:
             self.data = {}
 
-    def write(self, sid, session_data, ttl):
-        pass
+    def write(self, sid, session_data):
+        self.handler.set(sid, session_data, self.ttl)
 
     def destroy(self, sid):
         pass
@@ -91,12 +91,38 @@ class Session(object):
         session_data = pickle.dumps(self.data, 2)
 
         try:
-            self.write(self.sid, session_data, self.ttl)
+            self.write(self.sid, session_data)
         except Exception as e:
             self.log.critical('Could not write session: %s' % e)
             return
 
         return self.sid
+
+    def __getitem__(self, key):
+        """Returns the value associated with key on this session."""
+        return self.data.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        """Set a value named key on this session."""
+        self.data.__setitem__(key, value)
+        #self.dirty = True
+
+    def __delitem__(self, key):
+        """Deletes the value associated with key on this session."""
+        self.data.__delitem__(key)
+       # self.dirty = True
+
+    def __iter__(self):
+        """Returns an iterator over the keys (names) of the stored values."""
+        return self.data.iterkeys()
+
+    def __contains__(self, key):
+        """Returns True if key is present on this session."""
+        return self.data.__contains__(key)
+
+    def __str__(self):
+        """Returns a string representation of the session."""
+        return "SID=%s %s" % (self.sid, self.data)
 
 
 class SessionMiddleware(object):
@@ -106,8 +132,7 @@ class SessionMiddleware(object):
     :backend: An instance of the HandlerBase, you can use redis, memcache
     gae_datastore, etc, it just needs to extends the HandlerBas
 
-    :ttl: ``datetime.timedelta`` that specifies how long a session
-    may last. Defaults to 12 hours.
+    :ttl: that specifies how long a session may last. Defaults to 12 hours.
     """
 
     def __init__(self, app, backend, ttl=43200, cookie_name='PHPSESSID'):
@@ -143,11 +168,9 @@ class SessionMiddleware(object):
                 cookie[self.cookie_name] = sid
                 cookie[self.cookie_name]['path'] = '/'
                 cookie[self.cookie_name]['expires'] = self.ttl
-
-                self.log.debug('Cookie: %s' % cookie.values[0].OutputString())
-
-                headers.append(('Set-Cookie', morsel.OutputString())
-                               for morsel in cookie.values())
+                cookie = cookie.values()[0].OutputString()
+                self.log.debug('Cookie: %s' % cookie)
+                headers.append(('Set-Cookie', cookie))
             return start_response(status, headers, exc_info)
 
         """
