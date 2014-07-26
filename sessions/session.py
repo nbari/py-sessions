@@ -3,6 +3,7 @@
 wsgi middleware for handling sessions
 """
 
+import logging
 import pickle
 import time
 import uuid
@@ -20,13 +21,14 @@ data = local()
 
 class Session(object):
 
-    def __init__(self, environ, backend, ttl, cookie_name):
+    def __init__(self, environ, backend, ttl, cookie_name, log):
         self.handler = backend
         self.ttl = ttl
         self.cookie_name = cookie_name
         self.sid = None
         self.data = {}
         self.data_hash = None
+        self.log = log
 
         if 'HTTP_COOKIE' in environ:
             cookie = SimpleCookie(self.environ['HTTP_COOKIE'])
@@ -83,12 +85,9 @@ class Session(object):
         try:
             self.write(self.sid, session_data, self.ttl)
         except Exception as e:
-            return
+            return False
 
-        cookie = SimpleCookie()
-        cookie[self.cookie_name] = self.sid
-        cookie[self.cookie_name]['path'] = '/'
-        cookie[self.cookie_name]['expires'] = self.ttl
+        return self.sid
 
 
 class SessionMiddleware(object):
@@ -107,6 +106,10 @@ class SessionMiddleware(object):
         self.backend = backend
         self.ttl = ttl
         self.cookie_name = cookie_name
+        self.log = logging.getLogger()
+
+        if not self.log.handlers:
+            self.log.addHandler(logging.StreamHandler())
 
         if not isinstance(backend, HandlerBase):
             raise ValueError('backend must be an instance of HandlerBase')
@@ -117,16 +120,22 @@ class SessionMiddleware(object):
             environ=environ,
             backend=self.backend,
             ttl=self.ttl,
-            cookie_name=self.cookie_name)
+            cookie_name=self.cookie_name,
+            log=self.log)
 
         """
         PEP-0333 start_response()
         wrapper to insert a cookie into the response headers
         """
         def session_response(status, headers, exc_info=None):
-            session_cookie = data.session.save()
-            if isinstance(session_cookie, SimpleCookie):
-                headers.append(('Set-Cookie', session_cookie))
+            sid = data.session.save()
+            if sid:
+                cookie = SimpleCookie()
+                cookie[self.cookie_name] = sid
+                cookie[self.cookie_name]['path'] = '/'
+                cookie[self.cookie_name]['expires'] = self.ttl
+                headers.append(('Set-Cookie', morsel.OutputString())
+                               for morsel in cookie.values())
             return start_response(status, headers, exc_info)
 
         """
