@@ -27,8 +27,8 @@ How to use
 
 To work with ``sessions`` you need to set it up as an middleware
 
-Example
--------
+Setting up as middleware
+------------------------
 
     import sessions
     import zunzuncito
@@ -47,6 +47,26 @@ Example
     # Sessions middleware
     sessions_backend = redis_handler.Handler()
     app = sessions.SessionMiddleware(app, sessions_backend)
+
+Using sessions
+--------------
+
+    import sessions
+
+    session = sessions.session_start()
+
+    if 'test' in session:
+        session['test'] += 1
+        print session['test']
+    else:
+        session['test'] = 1
+
+    # To destroy a session
+    session.destroy()
+
+    # To get a new session id
+    session.regenerate_id()
+
 
 
 References:
