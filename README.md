@@ -12,7 +12,7 @@ Session data is stored only in server-side not in the client side via cookie.
 Session storage backends
 ------------------------
 
-The backend must follow the (HandlerBase)[https://github.com/nbari/py-sessions/blob/master/sessions/backends/__init__.py] abstract class.
+The backend must follow the [HandlerBase](https://github.com/nbari/py-sessions/blob/master/sessions/backends/__init__.py) abstract class.
 currenlty the suported backends are:
 
 * GAE_memcache
@@ -28,7 +28,7 @@ How to use
 To work with ``sessions`` you need to set it up as an middleware
 
 Example
-.......
+_______
 
     import sessions
     import zunzuncito
