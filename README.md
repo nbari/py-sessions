@@ -6,7 +6,7 @@ Python middleware for handling sessions
 Server-side only
 ----------------
 
-Session data is stored only in server-side not in the client side via cookie.
+Session data is stored only in server-side not in the client (persistent cookies).
 
 
 Session storage backends
@@ -28,7 +28,7 @@ How to use
 To work with ``sessions`` you need to set it up as an middleware
 
 Example
-_______
+-------
 
     import sessions
     import zunzuncito
