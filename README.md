@@ -69,6 +69,9 @@ Using sessions
 
 
 
+pip install python-memcached
+pip install redis
+
 References:
 * https://github.com/dound/gae-sessions
 * http://php.net/manual/en/class.sessionhandlerinterface.php
