@@ -34,6 +34,7 @@ class Session(object):
         self.data = {}
         self.data_hash = None
         self.log = log
+        self.clear_cookie = False
 
         if 'HTTP_COOKIE' in environ:
             cookie = SimpleCookie(environ['HTTP_COOKIE'])
@@ -52,24 +53,26 @@ class Session(object):
         else:
             self.sid = uuid.uuid4().hex
 
-        """
-         hash for current session data
-        """
-        self.data_hash = hash(frozenset(self.data.items()))
+        # hash for current session data
+        #self.data_hash = hash(frozenset(self.data.items()))
+
+        return self.sid
 
     def read(self, sid):
         session_data = self.handler.get(sid)
         if session_data:
             self.data = pickle.loads(session_data)
-
         else:
             self.data = {}
+        return self.data
 
     def write(self, sid, session_data):
-        self.handler.set(sid, session_data, self.ttl)
+        return self.handler.set(sid, session_data, self.ttl)
 
-    def destroy(self, sid):
-        pass
+    def destroy(self):
+        self.handler.delete(self.sid)
+        self.data = {}
+        self.clear_cookie = True
 
     def make_sid(self):
         expire = datetime.utcnow() + timedelta(seconds=self.ttl)
@@ -77,15 +80,12 @@ class Session(object):
         return ('%010d' % expire) + uuid.uuid4().hex
 
     def regenerate_id(self):
-        pass
+        self.read(self.sid)
+        self.handler.delete(self.sid)
+        self.sid = uuid.uuid4().hex
 
     def save(self):
-        # no session is active
         if not self.sid:
-            return
-
-        # nothing has changed
-        if self.data_hash == hash(frozenset(self.data.items())):
             return
 
         session_data = pickle.dumps(self.data, 2)
@@ -165,12 +165,21 @@ class SessionMiddleware(object):
             sid = data.session.save()
             if sid:
                 cookie = SimpleCookie()
-                cookie[self.cookie_name] = sid
+
+                if data.session.clear_cookie:
+                    cookie[self.cookie_name] = ''
+                    cookie[self.cookie_name]['expires'] = -86400
+                else:
+                    cookie[self.cookie_name] = sid
+                    cookie[self.cookie_name]['expires'] = self.ttl
+
                 cookie[self.cookie_name]['path'] = '/'
-                cookie[self.cookie_name]['expires'] = self.ttl
                 cookie = cookie[self.cookie_name].OutputString()
+
                 self.log.debug('Cookie: %s' % cookie)
+
                 headers.append(('Set-Cookie', cookie))
+
             return start_response(status, headers, exc_info)
 
         """
