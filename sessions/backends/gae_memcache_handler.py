@@ -6,7 +6,7 @@ from . import HandlerBase
 class Handler(HandlerBase):
 
     def set(self, sid, data, ttl=0):
-        return memcache.add(sid, data, ttl)
+        return memcache.set(sid, data, ttl)
 
     def get(self, sid):
         return memcache.get(sid)
