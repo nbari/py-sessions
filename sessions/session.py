@@ -5,11 +5,9 @@ wsgi middleware for handling sessions
 
 import logging
 import pickle
-import time
 import uuid
 
 from Cookie import SimpleCookie
-from datetime import datetime, timedelta
 from sessions.backends import HandlerBase
 from threading import local
 
@@ -74,19 +72,16 @@ class Session(object):
         self.data = {}
         self.clear_cookie = True
 
-    def make_sid(self):
-        expire = datetime.utcnow() + timedelta(seconds=self.ttl)
-        expire = int(time.mktime((expire).timetuple()))
-        return ('%010d' % expire) + uuid.uuid4().hex
-
     def regenerate_id(self):
-        self.read(self.sid)
         self.handler.delete(self.sid)
         self.sid = uuid.uuid4().hex
 
     def save(self):
         if not self.sid:
             return
+
+        if self.clear_cookie:
+            return self.sid
 
         session_data = pickle.dumps(self.data, 2)
 
