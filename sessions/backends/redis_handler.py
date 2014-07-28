@@ -10,7 +10,8 @@ class Handler(HandlerBase):
         self.db = redis.StrictRedis(host, port, db)
 
     def set(self, sid, data, ttl=0):
-        return self.db.setex(sid, ttl, data)
+        if self.db.setex(sid, ttl, data):
+            return sid
 
     def get(self, sid):
         return self.db.get(sid)

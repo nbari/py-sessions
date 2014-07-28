@@ -63,7 +63,7 @@ class Session(object):
             self.data = {}
 
     def write(self, sid, session_data):
-        self.handler.set(sid, session_data, self.ttl)
+        return self.handler.set(sid, session_data, self.ttl)
 
     def destroy(self):
         self.handler.delete(self.sid)
@@ -84,12 +84,10 @@ class Session(object):
         session_data = pickle.dumps(self.data, 2)
 
         try:
-            self.write(self.sid, session_data)
+            return self.write(self.sid, session_data)
         except Exception as e:
             self.log.critical('Could not write session: %s' % e)
             return
-
-        return self.sid
 
     def __getitem__(self, key):
         """Returns the value associated with key on this session."""

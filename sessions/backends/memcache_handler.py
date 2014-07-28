@@ -1,4 +1,5 @@
 import memcache
+import uuid
 
 from . import HandlerBase
 
@@ -9,10 +10,14 @@ class Handler(HandlerBase):
         self.db = memcache.Client(['%s:%s' % (host, port)], debug=0)
 
     def set(self, sid, data, ttl=0):
-        return self.db.set(sid, data, ttl)
+        if self.db.set(sid, data, ttl):
+            return sid
 
     def get(self, sid):
         return self.db.get(sid)
 
     def delete(self, sid):
         return self.db.delete(sid)
+
+    def make_sid(self):
+        return uuid.uuid4().hex
