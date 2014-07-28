@@ -3,11 +3,6 @@ py-sessions
 
 Python middleware for handling sessions
 
-Server-side only
-----------------
-
-Session data is stored only in server-side not in the client (persistent cookies).
-
 
 Session storage backends
 ------------------------
@@ -19,7 +14,7 @@ currenlty the suported backends are:
 * GAE_datastore
 * memcache
 * redis
-
+* cookie (signed/encrypted cookies)
 
 
 How to use
