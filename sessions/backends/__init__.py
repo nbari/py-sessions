@@ -19,3 +19,7 @@ class HandlerBase(object):
     @abstractmethod
     def delete(self, sid):
         return
+
+    @abstractmethod
+    def make_sid(self):
+        return

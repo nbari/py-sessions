@@ -1,4 +1,6 @@
 import redis
+import uuid
+
 from . import HandlerBase
 
 
@@ -15,3 +17,6 @@ class Handler(HandlerBase):
 
     def delete(self, sid):
         return self.db.delete(sid)
+
+    def make_sid(self):
+        return uuid.uuid4().hex

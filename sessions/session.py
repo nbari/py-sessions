@@ -5,7 +5,6 @@ wsgi middleware for handling sessions
 
 import logging
 import pickle
-import uuid
 
 from Cookie import SimpleCookie
 from sessions.backends import HandlerBase
@@ -47,9 +46,9 @@ class Session(object):
         if self.sid:
             # check if cookie hasn't expired
             if not self.read(self.sid):
-                self.sid = uuid.uuid4().hex
+                self.sid = self.handler.make_sid()
         else:
-            self.sid = uuid.uuid4().hex
+            self.sid = self.handler.make_sid()
 
         # hash for current session data
         #self.data_hash = hash(frozenset(self.data.items()))
@@ -62,10 +61,9 @@ class Session(object):
             self.data = pickle.loads(session_data)
         else:
             self.data = {}
-        return self.data
 
     def write(self, sid, session_data):
-        return self.handler.set(sid, session_data, self.ttl)
+        self.handler.set(sid, session_data, self.ttl)
 
     def destroy(self):
         self.handler.delete(self.sid)
@@ -74,9 +72,9 @@ class Session(object):
 
     def regenerate_id(self):
         self.handler.delete(self.sid)
-        self.sid = uuid.uuid4().hex
+        self.sid = self.handler.make_sid()
 
-    def save(self):
+    def close(self):
         if not self.sid:
             return
 
@@ -157,7 +155,7 @@ class SessionMiddleware(object):
         wrapper to insert a cookie into the response headers
         """
         def session_response(status, headers, exc_info=None):
-            sid = data.session.save()
+            sid = data.session.close()
             if sid:
                 cookie = SimpleCookie()
 
