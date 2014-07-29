@@ -126,7 +126,7 @@ class SessionMiddleware(object):
     :ttl: that specifies how long a session may last. Defaults to 12 hours.
     """
 
-    def __init__(self, app, backend, ttl=43200, cookie_name='PHPSESSID'):
+    def __init__(self, app, backend, ttl=43200, cookie_name='SID'):
         self.app = app
         self.backend = backend
         self.ttl = ttl
