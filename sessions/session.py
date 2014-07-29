@@ -45,7 +45,7 @@ class Session(object):
     def start(self):
         if self.sid:
             # check if cookie hasn't expired
-            if not self.read(self.sid):
+            if not self._read(self.sid):
                 self.sid = self.handler.make_sid()
         else:
             self.sid = self.handler.make_sid()
@@ -53,16 +53,14 @@ class Session(object):
         # hash for current session data
         #self.data_hash = hash(frozenset(self.data.items()))
 
-        return self.sid
-
-    def read(self, sid):
+    def _read(self, sid):
         session_data = self.handler.get(sid)
         if session_data:
             self.data = pickle.loads(session_data)
         else:
             self.data = {}
 
-    def write(self, sid, session_data):
+    def _write(self, sid, session_data):
         return self.handler.set(sid, session_data, self.ttl)
 
     def destroy(self):
@@ -84,7 +82,7 @@ class Session(object):
         session_data = pickle.dumps(self.data, 2)
 
         try:
-            return self.write(self.sid, session_data)
+            return self._write(self.sid, session_data)
         except Exception as e:
             self.log.critical('Could not write session: %s' % e)
             return
