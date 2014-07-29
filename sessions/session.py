@@ -3,6 +3,7 @@
 wsgi middleware for handling sessions
 """
 
+import hashlib
 import logging
 import pickle
 
@@ -23,13 +24,14 @@ def session_start():
 
 class Session(object):
 
-    def __init__(self, environ, backend, ttl, cookie_name, log):
+    def __init__(self, environ, backend, ttl, cookie_name, fp_use_ip, log):
+        self.environ = environ
         self.handler = backend
         self.ttl = ttl
         self.cookie_name = cookie_name
+        self.fp_use_ip = fp_use_ip
         self.sid = None
         self.data = {}
-        self.data_hash = None
         self.log = log
         self.clear_cookie = False
 
@@ -49,9 +51,6 @@ class Session(object):
                 self.sid = self.handler.make_sid()
         else:
             self.sid = self.handler.make_sid()
-
-        # hash for current session data
-        #self.data_hash = hash(frozenset(self.data.items()))
 
     def _read(self, sid):
         session_data = self.handler.get(sid)
@@ -78,6 +77,18 @@ class Session(object):
 
         if self.clear_cookie:
             return self.sid
+
+        """
+        create fingerprint
+        """
+        fingerprint = '%s%s%s%s' % (self.environ.get('HTTP_ACCEPT'),
+                                    self.environ.get('HTTP_USER_AGENT'),
+                                    self.environ.get('HTTP_ACCEPT_ENCODING'),
+                                    self.environ.get('HTTP_ACCEPT_LANGUAGE'))
+        if self.fp_use_ip:
+            fingerprint += self.environ.get('REMOTE_ADDR')
+
+        self.data['_fp'] = hashlib.sha1(fingerprint).hexdigest()
 
         session_data = pickle.dumps(self.data, 2)
 
@@ -118,17 +129,31 @@ class SessionMiddleware(object):
 
     """WSGI middleware that adds session support.
 
+    :app: The framework application to call
+
     :backend: An instance of the HandlerBase, you can use redis, memcache
     gae_datastore, etc, it just needs to extends the HandlerBas
 
-    :ttl: that specifies how long a session may last. Defaults to 12 hours.
+    :ttl: Specifies how long a session may last. Defaults to 12 hours.
+
+    :cookie_name: Name of the cookie to use.
+
+    :fp_use_ip: True or False, use the client IP or not for the fingerprint,
+    defaults to True
     """
 
-    def __init__(self, app, backend, ttl=43200, cookie_name='SID'):
+    def __init__(
+            self,
+            app,
+            backend,
+            ttl=43200,
+            cookie_name='SID',
+            fp_use_ip=True):
         self.app = app
         self.backend = backend
         self.ttl = ttl
         self.cookie_name = cookie_name
+        self.fp_use_ip = fp_use_ip
         self.log = logging.getLogger()
 
         if not self.log.handlers:
@@ -144,6 +169,7 @@ class SessionMiddleware(object):
             backend=self.backend,
             ttl=self.ttl,
             cookie_name=self.cookie_name,
+            fp_use_ip=self.fp_use_ip,
             log=self.log)
 
         """
