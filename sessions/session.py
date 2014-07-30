@@ -54,7 +54,8 @@ class Session(object):
     def start(self):
         if self.sid:
             # check if cookie exists and hasn't expired
-            if not self._read(self.sid):
+            self.data = self._read(self.sid)
+            if not self.data:
                 self.sid = self.handler.make_sid()
         else:
             self.sid = self.handler.make_sid()
@@ -62,18 +63,12 @@ class Session(object):
     def _read(self, sid):
         session_data = self.handler.get(sid)
         if session_data:
-            self.data = pickle.loads(session_data)
+            session_data = pickle.loads(session_data)
             # check the fingerprint
-            if '_@' in self.data:
-                if self.data['_@'] != self.fingerprint:
-                    self.data = {}
-            else:
-                self.data = {}
-
-        else:
-            self.data = {}
-
-        return self.data
+            if '_@' in session_data:
+                if session_data['_@'] == self.fingerprint:
+                    return session_data
+        return None
 
     def _write(self, sid, session_data):
         return self.handler.set(sid, session_data, self.ttl)
