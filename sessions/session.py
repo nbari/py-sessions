@@ -73,6 +73,8 @@ class Session(object):
         else:
             self.data = {}
 
+        return self.data
+
     def _write(self, sid, session_data):
         return self.handler.set(sid, session_data, self.ttl)
 
