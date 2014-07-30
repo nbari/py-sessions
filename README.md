@@ -14,7 +14,7 @@ currenlty the suported backends are:
 * GAE_datastore
 * memcache
 * redis
-* cookie (signed/encrypted cookies)
+* cookie (encrypted cookies)
 
 
 How to use
