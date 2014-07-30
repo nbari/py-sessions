@@ -68,7 +68,7 @@ class Session(object):
             if '_@' in session_data:
                 if session_data['_@'] == self.fingerprint:
                     return session_data
-        return None
+        return {}
 
     def _write(self, sid, session_data):
         return self.handler.set(sid, session_data, self.ttl)
