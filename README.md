@@ -43,6 +43,19 @@ Setting up as middleware
     sessions_backend = redis_handler.Handler()
     app = sessions.SessionMiddleware(app, sessions_backend)
 
+Using encrypted cookies
+-----------------------
+
+For using only cookies the cookie_handler is needed:
+
+    from sessions.backends import cookie_handler
+
+A ``cookie_key`` must be specified:
+
+    sessions_backend = cookie_handler.Handler('90875de1cb12c1efab39dc73c8cb053d')
+
+
+
 Using sessions
 --------------
 
