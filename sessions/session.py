@@ -25,15 +25,22 @@ def session_start():
 class Session(object):
 
     def __init__(self, environ, backend, ttl, cookie_name, fp_use_ip, log):
-        self.environ = environ
         self.handler = backend
         self.ttl = ttl
         self.cookie_name = cookie_name
-        self.fp_use_ip = fp_use_ip
         self.sid = None
         self.data = {}
         self.log = log
         self.clear_cookie = False
+
+        fingerprint = '%s%s%s%s' % (environ.get('HTTP_ACCEPT'),
+                                    environ.get('HTTP_USER_AGENT'),
+                                    environ.get('HTTP_ACCEPT_ENCODING'),
+                                    environ.get('HTTP_ACCEPT_LANGUAGE'))
+        if fp_use_ip:
+            fingerprint += environ.get('REMOTE_ADDR')
+
+        self.fingerprint = hashlib.sha1(fingerprint).hexdigest()
 
         if 'HTTP_COOKIE' in environ:
             cookie = SimpleCookie(environ['HTTP_COOKIE'])
@@ -46,7 +53,7 @@ class Session(object):
 
     def start(self):
         if self.sid:
-            # check if cookie hasn't expired
+            # check if cookie exists and hasn't expired
             if not self._read(self.sid):
                 self.sid = self.handler.make_sid()
         else:
@@ -56,6 +63,13 @@ class Session(object):
         session_data = self.handler.get(sid)
         if session_data:
             self.data = pickle.loads(session_data)
+            # check the fingerprint
+            if '_@' in self.data:
+                if self.data['_@'] != self.fingerprint:
+                    self.data = {}
+            else:
+                self.data = {}
+
         else:
             self.data = {}
 
@@ -78,17 +92,7 @@ class Session(object):
         if self.clear_cookie:
             return self.sid
 
-        """
-        create fingerprint
-        """
-        fingerprint = '%s%s%s%s' % (self.environ.get('HTTP_ACCEPT'),
-                                    self.environ.get('HTTP_USER_AGENT'),
-                                    self.environ.get('HTTP_ACCEPT_ENCODING'),
-                                    self.environ.get('HTTP_ACCEPT_LANGUAGE'))
-        if self.fp_use_ip:
-            fingerprint += self.environ.get('REMOTE_ADDR')
-
-        self.data['_fp'] = hashlib.sha1(fingerprint).hexdigest()
+        self.data['_@'] = self.fingerprint
 
         session_data = pickle.dumps(self.data, 2)
 
