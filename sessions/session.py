@@ -97,6 +97,9 @@ class Session(object):
             self.log.critical('Could not write session: %s' % e)
             return
 
+    def get(self, key):
+        return self.data.__getitem__(key)
+
     def __getitem__(self, key):
         """Returns the value associated with key on this session."""
         return self.data.__getitem__(key)
