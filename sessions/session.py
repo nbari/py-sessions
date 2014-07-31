@@ -31,10 +31,10 @@ class Session(object):
         self.log = log
         self.clear_cookie = False
 
-        fingerprint = '%s%s%s%s' % (environ.get('HTTP_ACCEPT'),
-                                    environ.get('HTTP_USER_AGENT'),
-                                    environ.get('HTTP_ACCEPT_ENCODING'),
-                                    environ.get('HTTP_ACCEPT_LANGUAGE'))
+        fingerprint = '%s%s%s' % (environ.get('HTTP_USER_AGENT'),
+                                  environ.get('HTTP_ACCEPT_ENCODING'),
+                                  environ.get('HTTP_ACCEPT_LANGUAGE'))
+
         if fp_use_ip:
             fingerprint += environ.get('REMOTE_ADDR')
 
