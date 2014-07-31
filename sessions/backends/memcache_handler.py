@@ -1,7 +1,7 @@
 import memcache
-import uuid
 
 from . import HandlerBase
+from uuid import uuid4
 
 
 class Handler(HandlerBase):
@@ -20,4 +20,4 @@ class Handler(HandlerBase):
         return self.db.delete(sid)
 
     def make_sid(self):
-        return uuid.uuid4().hex
+        return uuid4().hex

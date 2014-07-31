@@ -1,8 +1,7 @@
-import uuid
-
 from . import HandlerBase
 from datetime import datetime, timedelta
 from google.appengine.ext import ndb
+from uuid import uuid4
 
 
 class pySessions(ndb.Model):
@@ -12,7 +11,7 @@ class pySessions(ndb.Model):
 
     @classmethod
     def get_sid(cls, sid):
-        sid_key = ndb.Key('pySessions', sid)
+        sid_key = ndb.Key(cls, sid)
         q = pySessions.query(
             pySessions.key == sid_key,
             pySessions.expiry >= datetime.utcnow())
@@ -20,7 +19,7 @@ class pySessions(ndb.Model):
 
     @classmethod
     def del_sid(cls, sid):
-        sid_key = ndb.Key('pySessions', sid)
+        sid_key = ndb.Key(cls, sid)
         return sid_key.delete()
 
 
@@ -45,4 +44,4 @@ class Handler(HandlerBase):
         return pySessions.del_sid(sid)
 
     def make_sid(self):
-        return uuid.uuid4().hex
+        return uuid4().hex

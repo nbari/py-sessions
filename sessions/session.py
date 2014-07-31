@@ -11,9 +11,7 @@ from Cookie import SimpleCookie
 from sessions.backends import HandlerBase
 from threading import local
 
-"""
-thread-local data
-"""
+#thread-local data
 data = local()
 
 
@@ -106,12 +104,10 @@ class Session(object):
     def __setitem__(self, key, value):
         """Set a value named key on this session."""
         self.data.__setitem__(key, value)
-        #self.dirty = True
 
     def __delitem__(self, key):
         """Deletes the value associated with key on this session."""
         self.data.__delitem__(key)
-       # self.dirty = True
 
     def __iter__(self):
         """Returns an iterator over the keys (names) of the stored values."""
@@ -143,13 +139,8 @@ class SessionMiddleware(object):
     defaults to True
     """
 
-    def __init__(
-            self,
-            app,
-            backend,
-            ttl=43200,
-            cookie_name='SID',
-            fp_use_ip=True):
+    def __init__(self, app, backend, ttl=43200, cookie_name='SID',
+                 fp_use_ip=True):
         self.app = app
         self.backend = backend
         self.ttl = ttl
@@ -165,16 +156,14 @@ class SessionMiddleware(object):
 
     def __call__(self, environ, start_response):
         # initialize a session for the current user
-        data.session = Session(
-            environ=environ,
-            backend=self.backend,
-            ttl=self.ttl,
-            cookie_name=self.cookie_name,
-            fp_use_ip=self.fp_use_ip,
-            log=self.log)
+        data.session = Session(environ=environ,
+                               backend=self.backend,
+                               ttl=self.ttl,
+                               cookie_name=self.cookie_name,
+                               fp_use_ip=self.fp_use_ip,
+                               log=self.log)
 
-        """
-        PEP-0333 start_response()
+        """PEP-0333 start_response()
         wrapper to insert a cookie into the response headers
         """
         def session_response(status, headers, exc_info=None):
@@ -197,8 +186,4 @@ class SessionMiddleware(object):
                 headers.append(('Set-Cookie', cookie))
 
             return start_response(status, headers, exc_info)
-
-        """
-        call the app
-        """
         return self.app(environ, session_response)
