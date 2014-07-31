@@ -11,7 +11,7 @@ from Cookie import SimpleCookie
 from sessions.backends import HandlerBase
 from threading import local
 
-#thread-local data
+# thread-local data
 data = local()
 
 
@@ -28,6 +28,7 @@ class Session(object):
         self.cookie_name = cookie_name
         self.sid = None
         self.data = {}
+        self.data_hash = None
         self.log = log
         self.clear_cookie = False
 
@@ -57,6 +58,9 @@ class Session(object):
                 self.sid = self.handler.make_sid()
         else:
             self.sid = self.handler.make_sid()
+
+        # hash for current session data
+        self.data_hash = hash(frozenset(self.data.items()))
 
     def _read(self, sid):
         session_data = self.handler.get(sid)
@@ -88,6 +92,10 @@ class Session(object):
             return self.sid
 
         self.data['_@'] = self.fingerprint
+
+        # nothing has changed 'lazy loading'
+        if self.data_hash == hash(frozenset(self.data.items())):
+            return
 
         session_data = pickle.dumps(self.data, 2)
 
