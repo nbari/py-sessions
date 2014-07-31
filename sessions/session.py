@@ -181,7 +181,7 @@ class SessionMiddleware(object):
                 cookie[self.cookie_name]['path'] = '/'
                 cookie = cookie[self.cookie_name].OutputString()
 
-                self.log.debug('Cookie: %s' % cookie)
+                self.log.debug('Cookie: %s - %s' % (cookie, data.session.data))
 
                 headers.append(('Set-Cookie', cookie))
 
