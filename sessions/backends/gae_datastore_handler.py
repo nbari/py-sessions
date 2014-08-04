@@ -33,12 +33,13 @@ class Handler(HandlerBase):
                 data=data,
                 expiry=expire).put().id()
         except Exception:
-            return
+            return None
 
     def get(self, sid):
         session = pySessions.get_sid(sid)
         if session:
             return session.data
+        return {}
 
     def delete(self, sid):
         return pySessions.del_sid(sid)
