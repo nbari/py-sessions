@@ -30,6 +30,7 @@ class Session(object):
         self.data = {}
         self.log = log
         self.clear_cookie = False
+        self.session_start = False
 
         fingerprint = '%s%s%s' % (environ.get('HTTP_USER_AGENT'),
                                   environ.get('HTTP_ACCEPT_ENCODING'),
@@ -57,6 +58,7 @@ class Session(object):
                 self.sid = self.handler.make_sid()
         else:
             self.sid = self.handler.make_sid()
+        self.session_start = True
 
     def _read(self, sid):
         session_data = self.handler.get(sid)
@@ -81,7 +83,7 @@ class Session(object):
         self.sid = self.handler.make_sid()
 
     def close(self):
-        if not self.sid:
+        if not self.session_start:
             return
 
         if self.clear_cookie:
