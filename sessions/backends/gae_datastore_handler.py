@@ -9,19 +9,6 @@ class pySessions(ndb.Model):
     data = ndb.BlobProperty(required=True)
     expiry = ndb.DateTimeProperty(required=True)
 
-    @classmethod
-    def get_sid(cls, sid):
-        sid_key = ndb.Key(cls, sid)
-        q = pySessions.query(
-            pySessions.key == sid_key,
-            pySessions.expiry >= datetime.utcnow())
-        return q.get()
-
-    @classmethod
-    def del_sid(cls, sid):
-        sid_key = ndb.Key(cls, sid)
-        return sid_key.delete()
-
 
 class Handler(HandlerBase):
 
@@ -36,13 +23,13 @@ class Handler(HandlerBase):
             return None
 
     def get(self, sid):
-        session = pySessions.get_sid(sid)
-        if session:
+        session = pySessions.get_by_id(sid)
+        if session and session.expiry >= datetime.utcnow():
             return session.data
         return {}
 
     def delete(self, sid):
-        return pySessions.del_sid(sid)
+        return ndb.Key(pySessions, sid).delete()
 
     def make_sid(self):
         return uuid4().hex
