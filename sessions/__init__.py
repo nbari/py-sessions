@@ -2,5 +2,5 @@
 
 middleware for handling sessions
 """
-from sessions.version import __version__
+__version__ = '0.1.0'
 from sessions.session import SessionMiddleware, session_start
