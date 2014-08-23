@@ -63,11 +63,14 @@ class Session(object):
     def _read(self, sid):
         session_data = self.handler.get(sid)
         if session_data:
-            session_data = pickle.loads(session_data)
-            # check the fingerprint
-            if '_@' in session_data:
-                if session_data['_@'] == self.fingerprint:
-                    return session_data
+            try:
+                session_data = pickle.loads(session_data)
+                # check the fingerprint
+                if '_@' in session_data:
+                    if session_data['_@'] == self.fingerprint:
+                        return session_data
+            except Exception:
+                pass
         return {}
 
     def _write(self, sid, session_data):
